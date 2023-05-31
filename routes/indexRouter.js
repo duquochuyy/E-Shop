@@ -6,7 +6,7 @@ const controller = require("../controllers/indexController");
 
 // dành cho phần tạo bảng
 // router.get("/createTables", (req, res) => {
-//   let models = require("./models");
+//   let models = require("../models");
 //   models.sequelize.sync().then(() => {
 //     res.send("tables created");
 //   });
