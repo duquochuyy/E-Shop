@@ -9,11 +9,18 @@ const app = express();
 const port = process.env.PORT || 5000;
 //
 const expressHandlebars = require("express-handlebars");
-const {createStarList} = require('./controllers/handlebarsHelper');
-const {createPagination} = require('express-handlebars-paginate');
+const { createStarList } = require("./controllers/handlebarsHelper");
+const { createPagination } = require("express-handlebars-paginate");
 // cấu hình session
-const session = require('express-session');
-
+const session = require("express-session");
+// sử dụng redis
+const redisStore = require("connect-redis").default;
+const { createClient } = require("redis");
+const redisClient = createClient({
+  //url: "rediss://red-chrmnl67avj9vuf2br3g:r0k1Hz5DwXVBcKual52j055JjhK976iC@oregon-redis.render.com:6379",
+  url: "redis://red-chrmnl67avj9vuf2br3g:6379",
+});
+redisClient.connect().catch(console.error);
 
 // cấu hình public static folder, trả về thư mục public cho người dùng khi truy cập web
 app.use(express.static(__dirname + "/public"));
@@ -27,12 +34,12 @@ app.engine(
     extname: "hbs", // đuôi file
     defaultLayout: "layout",
     runtimeOptions: {
-        allowProtoPropertiesByDefault: true
+      allowProtoPropertiesByDefault: true,
     },
     helpers: {
-        createStarList,
-        createPagination
-    }
+      createStarList,
+      createPagination,
+    },
   })
 );
 
@@ -40,33 +47,35 @@ app.set("view engine", "hbs");
 
 // cấu hình động dữ liệu post từ body
 app.use(express.json());
-app.use(express.urlencoded({extended: false}));
+app.use(express.urlencoded({ extended: false }));
 
 // cấu hình sử dụng session
-app.use(session({
-  secret: 'S3cret', // khóa cho từng session lưu trữ
-  resave: false, // không cập nhập session nếu không có sự thay đổi
-  saveUninitialized: false, // không lưu những session chưa được khởi tạo
-  cookie: { // quy định thời gian tồn tại của session
-    httpOnly: true, // chỉ được truy cập thông qua http chứ ko thể truy cập do js mà mình viết lên
-    maxAge: 20 * 60 * 1000, // 20 phút đổi ra ms 
-  }
-}));
-
+app.use(
+  session({
+    secret: "S3cret", // khóa cho từng session lưu trữ
+    store: new redisStore({ client: redisClient }),
+    resave: false, // không cập nhập session nếu không có sự thay đổi
+    saveUninitialized: false, // không lưu những session chưa được khởi tạo
+    cookie: {
+      // quy định thời gian tồn tại của session
+      httpOnly: true, // chỉ được truy cập thông qua http chứ ko thể truy cập do js mà mình viết lên
+      maxAge: 20 * 60 * 1000, // 20 phút đổi ra ms
+    },
+  })
+);
 
 // middle ware
 app.use((req, res, next) => {
-  let Cart = require('./controllers/cart');
-  req.session.cart = new Cart(req.session.cart ? req.session.cart : {})
+  let Cart = require("./controllers/cart");
+  req.session.cart = new Cart(req.session.cart ? req.session.cart : {});
   res.locals.quantity = req.session.cart.quantity;
-  
 
   next();
-})
+});
 // routes, chuyển đến cho indexRouter xử lí
 app.use("/", require("./routes/indexRouter"));
 app.use("/products", require("./routes/productRouter"));
-app.use('/users', require('./routes/usersRouter'));
+app.use("/users", require("./routes/usersRouter"));
 
 // kiểm tra lỗi khi nhập sai link
 app.use((req, res, next) => {
@@ -75,7 +84,7 @@ app.use((req, res, next) => {
 
 app.use((error, req, res, next) => {
   console.error(error);
-  res.status(500).render("error", {message: "Internal Server Error"});
+  res.status(500).render("error", { message: "Internal Server Error" });
 });
 
 // khởi động web server
