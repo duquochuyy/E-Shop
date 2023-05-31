@@ -14,13 +14,13 @@ const { createPagination } = require("express-handlebars-paginate");
 // cấu hình session
 const session = require("express-session");
 // sử dụng redis
-// const redisStore = require("connect-redis").default;
-// const { createClient } = require("redis");
-// const redisClient = createClient({
-//   // url: "rediss://red-chrmnl67avj9vuf2br3g:r0k1Hz5DwXVBcKual52j055JjhK976iC@oregon-redis.render.com:6379",
-//   url: "redis://red-chrmnl67avj9vuf2br3g:6379",
-// });
-// redisClient.connect().catch(console.error);
+const redisStore = require("connect-redis").default;
+const { createClient } = require("redis");
+const redisClient = createClient({
+  // url: "rediss://red-chrmnl67avj9vuf2br3g:r0k1Hz5DwXVBcKual52j055JjhK976iC@oregon-redis.render.com:6379",
+  url: "redis://red-chrnl40rddl7ate2ge2g:6379",
+});
+redisClient.connect().catch(console.error);
 
 // cấu hình public static folder, trả về thư mục public cho người dùng khi truy cập web
 app.use(express.static(__dirname + "/public"));
@@ -53,7 +53,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
   session({
     secret: "S3cret", // khóa cho từng session lưu trữ
-    // store: new redisStore({ client: redisClient }),
+    store: new redisStore({ client: redisClient }),
     resave: false, // không cập nhập session nếu không có sự thay đổi
     saveUninitialized: false, // không lưu những session chưa được khởi tạo
     cookie: {
