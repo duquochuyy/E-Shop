@@ -1,6 +1,8 @@
 // đảm bảo không sử dụng các biến chưa khai báo
 "use strict";
 
+require('dotenv').config();
+
 const express = require("express");
 // khởi tạo ứng dụng web express
 const app = express();
@@ -17,8 +19,7 @@ const session = require("express-session");
 const redisStore = require("connect-redis").default;
 const { createClient } = require("redis");
 const redisClient = createClient({
-  // url: "rediss://red-chrmnl67avj9vuf2br3g:r0k1Hz5DwXVBcKual52j055JjhK976iC@oregon-redis.render.com:6379",
-  url: "redis://red-chrnl40rddl7ate2ge2g:6379",
+  url: process.env.REDIS_URL,
 });
 redisClient.connect().catch(console.error);
 
@@ -52,7 +53,7 @@ app.use(express.urlencoded({ extended: false }));
 // cấu hình sử dụng session
 app.use(
   session({
-    secret: "S3cret", // khóa cho từng session lưu trữ
+    secret: process.env.SESSION_SECRET, // khóa cho từng session lưu trữ
     store: new redisStore({ client: redisClient }),
     resave: false, // không cập nhập session nếu không có sự thay đổi
     saveUninitialized: false, // không lưu những session chưa được khởi tạo
