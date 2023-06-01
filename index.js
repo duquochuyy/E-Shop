@@ -1,7 +1,7 @@
 // đảm bảo không sử dụng các biến chưa khai báo
 "use strict";
 
-require('dotenv').config();
+require("dotenv").config();
 
 const express = require("express");
 // khởi tạo ứng dụng web express
@@ -22,6 +22,9 @@ const redisClient = createClient({
   url: process.env.REDIS_URL,
 });
 redisClient.connect().catch(console.error);
+// khai báo passportt
+const passport = require("./controllers/passport");
+const flash = require("connect-flash");
 
 // cấu hình public static folder, trả về thư mục public cho người dùng khi truy cập web
 app.use(express.static(__dirname + "/public"));
@@ -65,17 +68,25 @@ app.use(
   })
 );
 
+// cấu hình sử dụng passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// cấu hình sử dụng connect-flash
+app.use(flash());
+
 // middle ware
 app.use((req, res, next) => {
   let Cart = require("./controllers/cart");
   req.session.cart = new Cart(req.session.cart ? req.session.cart : {});
   res.locals.quantity = req.session.cart.quantity;
-
+  res.locals.isLoggedIn = req.isAuthenticated(); // de biet nguoi dung da dang nhap hay chua
   next();
 });
 // routes, chuyển đến cho indexRouter xử lí
 app.use("/", require("./routes/indexRouter"));
 app.use("/products", require("./routes/productRouter"));
+app.use('/users', require('./routes/authRouter')); // su ly phan xac thuc truoc khi lam nhung viec khac
 app.use("/users", require("./routes/usersRouter"));
 
 // kiểm tra lỗi khi nhập sai link
